@@ -12,6 +12,10 @@
         input, select, textarea { width: 100%; padding: 10px; margin-top: 5px; border: 1px solid #ddd; border-radius: 5px; }
         button { margin-top: 15px; padding: 10px; background: #007bff; color: white; border: none; cursor: pointer; border-radius: 5px; }
         button:hover { background: #0056b3; }
+        .chat-box { height: 300px; overflow-y: auto; border: 1px solid #ddd; padding: 10px; }
+        .message { padding: 8px 12px; border-radius: 10px; margin: 5px 0; max-width: 80%; }
+        .user { background: #007bff; color: white; align-self: flex-end; }
+        .ai { background: #f0f0f0; align-self: flex-start; }
     </style>
 </head>
 <body>
@@ -31,26 +35,31 @@
         <label>Choose AI Model:</label>
         <select id="ai-model"></select> <!-- Dynamically filled -->
 
+        <label>Use Voice Mode?</label>
+        <input type="checkbox" id="voice-mode">
+
         <button onclick="startInterview()">Start Interview</button>
     </div>
 
     <!-- Chat Stage -->
     <div class="container hidden" id="chat-container">
         <h2>AI Job Interview</h2>
-        <div id="chat-box" style="height: 300px; overflow-y: auto; border: 1px solid #ddd; padding: 10px;"></div>
+        <div id="chat-box" class="chat-box"></div>
         <input type="text" id="user-input" placeholder="Type your answer..." />
         <button onclick="sendMessage()">Send</button>
 
-         <button id="recordButton">Start Recording</button>
-        <button id="stopButton" disabled>Stop Recording</button>
+        <button id="recordButton">🎙️ Start Recording</button>
+        <button id="stopButton" disabled>⏹ Stop</button>
 
         <h3>Transcription:</h3>
         <p id="transcriptionText">Press start and speak...</p>
     </div>
 
-
     <script>
         let interviewData = {}; // Stores setup info
+        let voiceMode = false; // Voice mode toggle
+        let mediaRecorder;
+        let audioChunks = [];
 
         async function loadModels() {
             let response = await fetch("/get-models");
@@ -60,11 +69,14 @@
         }
 
         async function startInterview() {
+            voiceMode = document.getElementById("voice-mode").checked;
+
             interviewData = {
                 company: document.getElementById("company-name").value,
                 position: document.getElementById("job-position").value,
                 description: document.getElementById("job-description").value,
-                model: document.getElementById("ai-model").value
+                model: document.getElementById("ai-model").value,
+                voice: voiceMode
             };
 
             document.getElementById("setup-container").classList.add("hidden");
@@ -76,16 +88,13 @@
                 headers: { "Content-Type": "application/json" }
             });
 
-            let chatBox = document.getElementById("chat-box");
-            chatBox.innerHTML = `<p><b>AI:</b> Welcome! Let's start your interview for <b>${interviewData.position}</b> at <b>${interviewData.company}</b>.</p>`;
+            displayMessage(`Welcome! Let's start your interview for <b>${interviewData.position}</b> at <b>${interviewData.company}</b>.`, "ai");
         }
 
         async function sendMessage() {
             let userInput = document.getElementById("user-input").value;
             if (!userInput.trim()) return;
-
-            let chatBox = document.getElementById("chat-box");
-            chatBox.innerHTML += `<p><b>You:</b> ${userInput}</p>`;
+            displayMessage(userInput, "user");
             document.getElementById("user-input").value = "";
 
             let response = await fetch("/chat", {
@@ -95,14 +104,24 @@
             });
 
             let data = await response.json();
-            chatBox.innerHTML += `<p><b>AI:</b> ${data.response}</p>`;
+            displayMessage(data.response, "ai");
+            if (voiceMode) speakText(data.response);
+        }
+
+        function displayMessage(text, sender) {
+            let chatBox = document.getElementById("chat-box");
+            let messageDiv = document.createElement("div");
+            messageDiv.classList.add("message", sender);
+            messageDiv.innerHTML = `<b>${sender === "user" ? "You" : "AI"}:</b> ${text}`;
+            chatBox.appendChild(messageDiv);
             chatBox.scrollTop = chatBox.scrollHeight;
         }
 
-        document.addEventListener("DOMContentLoaded", loadModels);
-
-         let mediaRecorder;
-        let audioChunks = [];
+        function speakText(text) {
+            let speech = new SpeechSynthesisUtterance(text);
+            speech.lang = "en-US";
+            window.speechSynthesis.speak(speech);
+        }
 
         document.getElementById("recordButton").addEventListener("click", async () => {
             let stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -117,13 +136,11 @@
                 let formData = new FormData();
                 formData.append("audio", audioBlob, "user_audio.wav");
 
-                let response = await fetch("/transcribe", {
-                    method: "POST",
-                    body: formData
-                });
-
+                let response = await fetch("/transcribe", { method: "POST", body: formData });
                 let result = await response.json();
                 document.getElementById("transcriptionText").innerText = result.transcription;
+                displayMessage(result.transcription, "user");
+                sendMessage(result.transcription);
             };
 
             mediaRecorder.start();
@@ -136,6 +153,8 @@
             document.getElementById("recordButton").disabled = false;
             document.getElementById("stopButton").disabled = true;
         });
+
+        document.addEventListener("DOMContentLoaded", loadModels);
     </script>
 
 </body>
