@@ -1,0 +1,11 @@
+﻿openai
+faster-whisper
+google-cloud-texttospeech
+opencv-python
+flask
+fastapi
+uvicorn
+pydub
+gradio
+webrtcvad
+json
