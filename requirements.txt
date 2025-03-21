@@ -9,3 +9,4 @@ pydub
 gradio
 webrtcvad
 json
+azure-cognitiveservices-speech

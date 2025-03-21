@@ -30,7 +30,7 @@ def get_interview_prompt(session):
     """
 
 
-def interview_templates():
+def get_interview_templates():
     company = "Dream-Non-existent Company"
     job_name = "Front-end Software Engineer"
     job_description = """

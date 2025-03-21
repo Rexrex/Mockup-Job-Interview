@@ -1,0 +1,28 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Job Interview</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/interview.css') }}">
+    <script src="{{ url_for('static', filename='js/main.js') }}" defer></script>
+</head>
+<body>
+
+    <div class="container">
+        <h2>AI Job Interview</h2>
+
+        <div id="chat-box"></div>
+
+        <!-- Text input for user messages -->
+        <input type="text" id="text-input" placeholder="Type your response here..." onkeypress="handleKeyPress(event)">
+        <button onclick="sendTextMessage()">Send</button>
+
+        <button id="micButton" onclick="toggleMic()">Unmute Mic</button>
+        <button id="aiSpeechButton" onclick="toggleAiSpeech()">Mute AI</button>
+
+
+    </div>
+
+</body>
+</html>
