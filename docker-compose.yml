@@ -8,4 +8,21 @@ services:
       - "5000:5000"
     env_file:
       - "app.env"
+    depends_on:
+      - db
+    environment:
+        - DATABASE_URL=postgresql://user:password@db:5432/interviews
     restart: always
+
+  db:
+      image: postgres:latest
+      container_name: interview-db
+      restart: always
+      environment:
+        POSTGRES_USER: user
+        POSTGRES_PASSWORD: password
+        POSTGRES_DB: interviews
+      ports:
+        - "5432:5432"
+      volumes:
+        - pgdata:/var/lib/postgresql/data
