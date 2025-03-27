@@ -8,5 +8,6 @@ uvicorn
 pydub
 gradio
 webrtcvad
+pinecone
 langfuse
 azure-cognitiveservices-speech
