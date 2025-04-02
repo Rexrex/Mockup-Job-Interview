@@ -2,3 +2,6 @@ app.env
 *.env
 *.env
 *.env
+app.env
+/app/core/__pycache__
+/app/audio_files

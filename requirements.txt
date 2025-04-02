@@ -10,4 +10,5 @@ gradio
 webrtcvad
 pinecone
 langfuse
+python-dotenv
 azure-cognitiveservices-speech

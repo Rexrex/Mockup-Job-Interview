@@ -46,4 +46,4 @@ def search_similar(text):
     ]
 
     print("Translated RAG Results\n", retrieved_texts)
-    return results
+    return retrieved_texts

@@ -1,10 +1,9 @@
 ﻿import os
-
 import azure.cognitiveservices.speech as speechsdk
 
 class Transcriber:
-    def __init__(self):
-        self.azure_key = os.environ.get('AZURE_KEY')
+    def __init__(self, key):
+        self.azure_key = key  # Needed for session storage
         self.azure_region = "westeurope"
         if not self.azure_key:
             raise ValueError("Missing API key: Set the AZURE_KEY environment variable.")
@@ -26,8 +25,18 @@ class Transcriber:
         service_region = self.azure_region
 
         speech_config = speechsdk.SpeechConfig(subscription=speech_key, region=service_region)
-        audio_config = speechsdk.audio.AudioOutputConfig(use_default_speaker=True)
 
+        # Save the output instead of playing it
+        file_name = "output.wav"
+        file_path = os.path.join("audio_files", file_name)
+
+        audio_config = speechsdk.audio.AudioOutputConfig(filename=file_path)
         synthesizer = speechsdk.SpeechSynthesizer(speech_config=speech_config, audio_config=audio_config)
-        synthesizer.speak_text_async(text)
+
+        result = synthesizer.speak_text_async(text).get()
+
+        if result.reason == speechsdk.ResultReason.SynthesizingAudioCompleted:
+            return file_path  # Return the saved file path
+        else:
+            return None  # Handle errors properly
 

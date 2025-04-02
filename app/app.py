@@ -5,14 +5,14 @@ import os
 from core import llm, prompts, azure_stt
 
 app = Flask(__name__)
-app.secret_key = "supersecretkey"  # Needed for session storage
-
+app.secret_key = os.getenv("FLASK_SECRET_KEY")  # Needed for session storage
+# Now you can use os.getenv()
+azure_key = os.getenv("AZURE_API_KEY")
 # 🔹 Model List (Easily Updatable)
 AVAILABLE_MODELS = ["deepseek/deepseek-r1:free", "mistralai/mistral-small-3.1-24b-instruct:free", "google/gemma-3-4b-it:free"]
 
-
 # Load Faster Whisper Transcriber
-transcriber = azure_stt.Transcriber()  # Change model size if needed
+transcriber = azure_stt.Transcriber(azure_key)  # Change model size if needed
 
 # Ensure the 'audio_files' directory exists
 os.makedirs("audio_files", exist_ok=True)
@@ -29,6 +29,7 @@ def setup():
     session["company"] = data["company"] if len(data["company"]) > 1 else default_company
     session["position"] = data["position"] if len(data["position"]) > 1 else default_job_title
     session["description"] = data["description"] if len(data["description"]) > 1 else default_job_description
+    session["model"] = data["model"] if len(data["description"]) > 1 else "deepseek/deepseek-r1:free"
 
     print(f"----- Interview Setup -----\nCompany: {session['company']}\nPosition: {session['position']}")
 
@@ -77,12 +78,18 @@ def synthesize_speech():
         return jsonify({"error": "No text provided"}), 400
 
     audio_file = transcriber.synthesize_speech_azure(text)
+
+    if not audio_file:  # Debugging check
+        return jsonify({"error": "Failed to generate audio"}), 500
+
     return send_file(audio_file, mimetype="audio/wav")
 
 @app.route("/chat", methods=["POST"])
 def chat():
-    user_message = json.loads(request.data)["message"]
-    response = llm.chat_with_ai(user_message, session)
+    data = json.loads(request.data)
+    user_message = data.get("message")
+    model_name = session.get("model")
+    response = llm.chat_with_ai(user_message, session, model_name)
     return {"response": response}
 
 if __name__ == "__main__":
